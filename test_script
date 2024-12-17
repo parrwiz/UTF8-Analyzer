@@ -1,0 +1,49 @@
+#!/bin/bash
+
+# Check if the correct number of arguments are provided
+if [ "$#" -ne 1 ]; then
+    echo "Usage: ./test_script <compiled_program>"
+    exit 1
+fi
+
+# Variables
+PROGRAM=$1
+TEST_DIR="./tests"
+
+# Loop through all .txt files in the ./tests directory
+for TEST_FILE in $TEST_DIR/*.txt; do
+    # Extract the base name of the test file with extension
+    BASE_NAME=$(basename "$TEST_FILE")
+
+    # Set the corresponding solution file
+    SOLUTION_FILE="$TEST_DIR/$BASE_NAME.expect"
+
+    # Check if the solution file exists
+    if [ -f "$SOLUTION_FILE" ]; then
+        # Capture the program's output in a variable
+        PROGRAM_OUTPUT=$(./$PROGRAM < "$TEST_FILE")
+
+        # Variable to track if the test passed
+        PASS=true
+
+        # Check each line of the .expect file
+        while IFS= read -r LINE; do
+            if ! echo "$PROGRAM_OUTPUT" | grep -q -F "$LINE"; then
+                echo "Test $TEST_FILE failed."
+                echo "Expected line not found in output:"
+                echo "$LINE"
+                PASS=false
+                break
+            fi
+        done < "$SOLUTION_FILE"
+
+        # If all lines were found, print passed message
+        if [ "$PASS" = true ]; then
+            echo "Test $TEST_FILE passed."
+        fi
+        echo ""
+    else
+        echo "No solution file found for $TEST_FILE (expecting $SOLUTION_FILE)."
+    fi
+
+done
